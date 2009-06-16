@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+  <hibernate-mapping>
+  <class name="blancpanda.fx.CandleStick" table="fx_rate" lazy="false">
+    <id name="csid" column="csid">
+      <generator class="assigned"/>
+    </id>
+    <property name="time" />
+    <property name="period_cd" />
+    <property name="bid_open" />
+    <property name="bid_close" />
+    <property name="bid_high" />
+    <property name="bid_low" />
+    <property name="ask_open" />
+    <property name="ask_close" />
+    <property name="ask_high" />
+    <property name="ask_low" />
+  </class>
+</hibernate-mapping>
