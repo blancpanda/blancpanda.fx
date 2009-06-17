@@ -7,6 +7,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.util.List;
 
+import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.renderer.xy.CandlestickRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.time.MovingAverage;
@@ -39,6 +40,10 @@ public class FXChartUtils {
 	 * 単純移動平均線の長期線のピリオド数
 	 */
 	private static final int SMA_LONGER_PERIODS = 90;
+	
+	public static ValueMarker createMarker(double val){
+		return new ValueMarker(val, Color.GREEN, new BasicStroke(2, 1, 1));
+	}
 	
 	public static OHLCSeries loadCandleStick(OHLCSeries candle,
 			int currency_pair, int period) {
@@ -127,7 +132,7 @@ public class FXChartUtils {
 
 	public static CandlestickRenderer getCandleStickRenderer() {
 		CandlestickRenderer cr;
-		cr = new CandlestickRenderer(CandlestickRenderer.WIDTHMETHOD_INTERVALDATA);
+		cr = new CandlestickRenderer(CandlestickRenderer.WIDTHMETHOD_AVERAGE);
 		// ローソク足の色を変える
 		// 陽線を白に
 		cr.setUpPaint(Color.WHITE);
