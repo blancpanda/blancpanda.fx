@@ -1,11 +1,7 @@
 package blancpanda.fx;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,8 +9,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 
-import net.arnx.jsonic.JSON;
-import net.arnx.jsonic.JSONException;
+import org.jfree.data.time.RegularTimePeriod;
 
 public class CandleStick implements Serializable {
 	/**
@@ -28,7 +23,7 @@ public class CandleStick implements Serializable {
 	public static final int M30 = 2; // 30分足
 	public static final int H1 = 3; // 1時間足
 	public static final int H2 = 4; // 2時間足
-	public static final int D1 = 5; // 日足
+//	public static final int D1 = 5; // 日足
 
 	// currency_pair の選択肢
 	public static final int USDCAD = 0; 	//
@@ -50,6 +45,7 @@ public class CandleStick implements Serializable {
 
 	private String csid;
 	private String time;
+	private int currency_pair;
 	private int period_cd;
 	private double bid_open;
 	private double bid_close;
@@ -59,7 +55,6 @@ public class CandleStick implements Serializable {
 	private double ask_close;
 	private double ask_high;
 	private double ask_low;
-	private int currency_pair;
 
 	private SimpleDateFormat sdf;
 	private double bid;
@@ -100,6 +95,18 @@ public class CandleStick implements Serializable {
 	 */
 	public void setTime(String time) {
 		this.time = time;
+	}
+	/**
+	 * @return
+	 */
+	public int getCurrency_pair() {
+		return currency_pair;
+	}
+	/**
+	 * @param currency_pair
+	 */
+	public void setCurrency_pair(int currency_pair) {
+		this.currency_pair = currency_pair;
 	}
 	/**
 	 * @return period_cd
@@ -237,24 +244,22 @@ public class CandleStick implements Serializable {
 		}
 		return date;
 	}
+	@SuppressWarnings("unchecked")
+	public RegularTimePeriod getCurrentRate(){
+		// 最新のデータを取得してプロパティを変える
+		HashMap map = FXUtils.getRateData();
+		return getCurrentRate(map);
+	}
 
 	@SuppressWarnings("unchecked")
-	public Date getCurrentRate(){
+	public RegularTimePeriod getCurrentRate(HashMap map){
 		// 最新のデータを取得してプロパティを変える
-		InputStream json = getRealTimeRateJSON();
-		HashMap map = null;
-		try {
-			map = JSON.decode(json, HashMap.class);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(Long.parseLong((String) map.get("timestamp")));
 		time = sdf.format(cal.getTime());
-		csid = period_cd + time;
+		DecimalFormat df = new DecimalFormat("00");	// 2桁数値にフォーマット
+		csid = df.format(currency_pair) + period_cd + time;
 
 		ArrayList<HashMap<String, String>> rates = (ArrayList<HashMap<String, String>>)map.get("rate");
 		HashMap<String, String> rate = rates.get(currency_pair);
@@ -275,7 +280,8 @@ public class CandleStick implements Serializable {
 		if(ask < ask_low){
 			ask_low = ask;
 		}
-		return getDate();
+		
+		return FXUtils.getRegularTimePeriod(getDate(), period_cd);
 	}
 	
 	private void initRate() {
@@ -300,21 +306,19 @@ public class CandleStick implements Serializable {
 		ask_high = ask;
 		ask_low = ask;
 	}
-
-	private InputStream getRealTimeRateJSON(){
-		InputStream is = null;
-		URL url;
-		URLConnection urlconn;
-		try {
-			url = new URL("http://min-fx.jp/market/rate/var/rate.json");
-			urlconn = url.openConnection();
-			is = urlconn.getInputStream();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return is;
+	
+	public CandleStick clone(){
+		CandleStick clone = new CandleStick(currency_pair, period_cd);
+		clone.setCsid(csid);
+		clone.setTime(time);
+		clone.setAsk_open(ask_open);
+		clone.setAsk_high(ask_high);
+		clone.setAsk_low(ask_low);
+		clone.setAsk_close(ask_close);
+		clone.setBid_open(bid_open);
+		clone.setBid_high(bid_high);
+		clone.setBid_low(bid_low);
+		clone.setBid_close(bid_close);
+		return clone;
 	}
-
 }
