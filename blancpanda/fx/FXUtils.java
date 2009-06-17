@@ -3,8 +3,17 @@
  */
 package blancpanda.fx;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+
+import net.arnx.jsonic.JSON;
+import net.arnx.jsonic.JSONException;
 
 import org.jfree.chart.axis.SegmentedTimeline;
 import org.jfree.data.time.Hour;
@@ -26,6 +35,31 @@ public class FXUtils {
 	public static final long M30_SEGMENT_SIZE = M1_SEGMENT_SIZE * 30;
 	public static final long H1_SEGMENT_SIZE = M1_SEGMENT_SIZE * 60;
 	public static final long H2_SEGMENT_SIZE = H1_SEGMENT_SIZE * 2;
+	
+	@SuppressWarnings("unchecked")
+	public static HashMap getRateData(){
+		HashMap map = null;
+		InputStream is = null;
+		URL url;
+		URLConnection urlconn;
+		try {
+			url = new URL("http://min-fx.jp/market/rate/var/rate.json");
+			urlconn = url.openConnection();
+			is = urlconn.getInputStream();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			map = JSON.decode(is, HashMap.class);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return map;
+	}
 	
 	public static Date calcDateAxisMin(Date date, int period, int cnt){
 		Date ret = null;
