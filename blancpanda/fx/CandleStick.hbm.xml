@@ -7,6 +7,7 @@
       <generator class="assigned"/>
     </id>
     <property name="time" />
+    <property name="currency_pair" />
     <property name="period_cd" />
     <property name="bid_open" />
     <property name="bid_close" />
