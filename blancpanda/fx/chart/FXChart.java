@@ -15,6 +15,7 @@ import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.SegmentedTimeline;
 import org.jfree.chart.plot.DatasetRenderingOrder;
+import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.CandlestickRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
@@ -23,6 +24,7 @@ import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.ohlc.OHLCSeries;
 import org.jfree.data.time.ohlc.OHLCSeriesCollection;
 
+import blancpanda.IndeterminateProgressBar;
 import blancpanda.fx.CandleStick;
 import blancpanda.fx.FXUtils;
 
@@ -72,6 +74,11 @@ public class FXChart extends JPanel {
 	 * ロウソク足
 	 */
 	private OHLCSeries candle;
+	
+	/**
+	 * 現在のレートを示すマーカー
+	 */
+	private ValueMarker marker;
 		
 	/**
 	 * 単純移動平均
@@ -163,9 +170,14 @@ public class FXChart extends JPanel {
 		// 0を含まずに自動調整
 		range.setAutoRangeIncludesZero(false);
 		
+		// マーカー
+		marker = FXChartUtils.createMarker(0);
+		
 		// プロットに軸を追加
 		plot.setDomainAxis(0, domain);
 		plot.setRangeAxis(0, range);
+		plot.addRangeMarker(marker);
+
 		
 		// 各データの作成
 		// ロウソク足データ
@@ -218,6 +230,10 @@ public class FXChart extends JPanel {
 					cs.getBid_low(), cs.getBid_close());
 			// 移動平均
 			tscSMA = FXChartUtils.updatePartOfSMA(candle, tscSMA);
+			
+			// マーカー
+			marker.setValue(cs.getBid_close());
+			
 			// 時間の表示範囲
 			domain.setMinimumDate(FXUtils.calcDateAxisMin(prd.getEnd(), period, max_visible));
 			domain.setMaximumDate(prd.getEnd());
@@ -227,6 +243,9 @@ public class FXChart extends JPanel {
 	}
 	
 	private void updateChart() {
+		// プログレスバーを表示
+		JFrame progress = IndeterminateProgressBar.show("チャートを更新しています");
+		
 		boolean changed = false;
 		if(period != cmb_period.getSelectedIndex()){
 			// ピリオドが変わった
@@ -257,6 +276,9 @@ public class FXChart extends JPanel {
 			}
 			
 			changed = false;
+			
+			// プログレスバーを消す
+			progress.dispose();
 		}
 	}
 
@@ -283,8 +305,13 @@ public class FXChart extends JPanel {
 	class ChartChanger implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
+			// プログレスバーを表示
+			JFrame progress = IndeterminateProgressBar.show("チャートを更新しています");
 			// チャートを更新
 			updateChart();
+			// プログレスバーを消す
+			progress.dispose();
+			
 		}
 		
 	}
