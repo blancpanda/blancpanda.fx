@@ -3,7 +3,6 @@ package blancpanda.fx.chart;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Date;
 
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -86,7 +85,7 @@ public class FXChart extends JPanel {
 	 */
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("リアルタイム為替チャート");
-		FXChart panel = new FXChart(false, CandleStick.USDJPY, CandleStick.M5, 60); 
+		FXChart panel = new FXChart(true, CandleStick.USDJPY, CandleStick.M5, 60); 
 		frame.getContentPane().add(panel, BorderLayout.CENTER);
 		
 		String[] str_currency_pair = {
@@ -206,9 +205,8 @@ public class FXChart extends JPanel {
 	
 	@SuppressWarnings("unchecked")
 	private void updateSeries(){
-		Date date = cs.getCurrentRate();
 		// なぜか取得日時が逆戻りするので、戻った場合には何もしない。
-		RegularTimePeriod prd = FXUtils.getRegularTimePeriod(date, period);
+		RegularTimePeriod prd = cs.getCurrentRate();
 		if (prd.compareTo(pre_period) >= 0) {
 			int index = candle.indexOf(prd);
 			if (index >= 0) {
