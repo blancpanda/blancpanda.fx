@@ -30,6 +30,9 @@ import org.jfree.data.time.ohlc.OHLCSeriesCollection;
 import blancpanda.IndeterminateProgressBar;
 import blancpanda.fx.CandleStick;
 import blancpanda.fx.FXUtils;
+import blancpanda.fx.chart.indicator.BollingerBandsFibonacciRatios;
+import blancpanda.fx.chart.indicator.Ichimoku;
+import blancpanda.fx.chart.indicator.SimpleMovingAverage;
 
 public class FXChart extends JPanel {
 
@@ -98,8 +101,13 @@ public class FXChart extends JPanel {
 	private TimeSeriesCollection tscICHI0;
 	private TimeSeriesCollection tscICHI1;
 	
-	IndeterminateProgressBar progress;
-	DecimalFormat df;
+	/**
+	 * ボリンジャー-フィボナッチ
+	 */
+	private TimeSeriesCollection tscBOFI;
+	
+	private IndeterminateProgressBar progress;
+	private DecimalFormat df;
 	
 	/**
 	 * @param args
@@ -207,16 +215,18 @@ public class FXChart extends JPanel {
 		osc.addSeries(candle);
 		
 		// テクニカル指標
-		tscSMA = FXChartUtils.getSimpleMovingAverage(candle);
-		tscICHI = FXChartUtils.getIchimoku(candle);
+		tscSMA = SimpleMovingAverage.getSimpleMovingAverage(candle);
+		tscICHI = Ichimoku.getIchimoku(candle);
 		tscICHI0 = tscICHI[0];
 		tscICHI1 = tscICHI[1];
+		tscBOFI = BollingerBandsFibonacciRatios.getBollingerFibonacci(candle);
 		
 		// プロットにデータを追加
 		plot.setDataset(0, osc);
 		plot.setDataset(1, tscSMA);
 		plot.setDataset(2, tscICHI0);
 		plot.setDataset(3, tscICHI1);
+		plot.setDataset(4, tscBOFI);
 		
 		// データと軸の対応関係を設定
 		plot.mapDatasetToDomainAxis(0, 0);
@@ -227,19 +237,25 @@ public class FXChart extends JPanel {
 		plot.mapDatasetToRangeAxis(2, 0);		
 		plot.mapDatasetToDomainAxis(3, 0);
 		plot.mapDatasetToRangeAxis(3, 0);		
+		plot.mapDatasetToDomainAxis(4, 0);
+		plot.mapDatasetToRangeAxis(4, 0);		
 		
 		// 見た目の設定
 		// ロウソク足
 		cr = FXChartUtils.getCandleStickRenderer();
 		plot.setRenderer(0, cr);		
 		// 移動平均
-		xyr = FXChartUtils.getSimpleMovingAverateRenderer();
+		xyr = SimpleMovingAverage.getSimpleMovingAverateRenderer();
 		plot.setRenderer(1, xyr);		
 		// 一目均衡表
-		xyr = FXChartUtils.getIchimokuRenderer();
+		xyr = Ichimoku.getIchimokuRenderer();
 		plot.setRenderer(2, xyr);
-		xdr = FXChartUtils.getIchimokuKumoRenderer();
+		xdr = Ichimoku.getIchimokuKumoRenderer();
 		plot.setRenderer(3, xdr);
+		// ボリンジャー-フィボナッチ
+		xyr = BollingerBandsFibonacciRatios.getBollingerFibonacciRenderer();
+		plot.setRenderer(4, xyr);
+		
 		// 重ね順
 		plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
 		
@@ -264,9 +280,11 @@ public class FXChart extends JPanel {
 			candle.add(prd, cs.getBid_open(), cs.getBid_high(),
 					cs.getBid_low(), cs.getBid_close());
 			// 移動平均
-			tscSMA = FXChartUtils.updatePartOfSMA(candle, tscSMA);
+			SimpleMovingAverage.updatePartOfSMA(candle, tscSMA);
 			// 一目均衡表
-			FXChartUtils.updatePartOfIchimoku(candle, tscICHI);
+			Ichimoku.updatePartOfIchimoku(candle, tscICHI);
+			// ボリンジャー-フィボナッチ
+			BollingerBandsFibonacciRatios.updatePartOfBollingerFibonacci(candle, tscBOFI);
 			
 			// マーカー
 			marker.setValue(cs.getBid_close());
@@ -307,9 +325,11 @@ public class FXChart extends JPanel {
 				candle = FXChartUtils.loadCandleStick(candle, currency_pair, period);
 			}
 			// 移動平均
-			tscSMA = FXChartUtils.updateAllOfSMA(candle, tscSMA);
+			SimpleMovingAverage.updateAllOfSMA(candle, tscSMA);
 			// 一目均衡表
-			tscICHI = FXChartUtils.getIchimoku(candle);
+			Ichimoku.updateAllOfIchimoku(candle, tscICHI);
+			// ボリンジャー-フィボナッチ
+			BollingerBandsFibonacciRatios.updateAllOfBollingerFibonacci(candle, tscBOFI);
 			
 /*			// 時間の表示範囲
 			if(candle.getItemCount() >= 1){
@@ -317,6 +337,7 @@ public class FXChart extends JPanel {
 				//domain.setMaximumDate(candle.getPeriod(candle.getItemCount() - 1).getEnd());
 			}
 */			
+			
 			changed = false;
 			
 			// プログレスバーを隠す
