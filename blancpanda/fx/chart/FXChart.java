@@ -1,8 +1,10 @@
 package blancpanda.fx.chart;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
 
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -18,9 +20,10 @@ import org.jfree.chart.plot.DatasetRenderingOrder;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.CandlestickRenderer;
+import org.jfree.chart.renderer.xy.XYDifferenceRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.RegularTimePeriod;
+import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.ohlc.OHLCSeries;
 import org.jfree.data.time.ohlc.OHLCSeriesCollection;
 
@@ -43,6 +46,9 @@ public class FXChart extends JPanel {
 	 */
 	private boolean db;
 	
+	/**
+	 * ロウソクの最大表示数
+	 */
 	private int max_visible;
 	
 	/**
@@ -54,7 +60,7 @@ public class FXChart extends JPanel {
 	 * 通貨ペア
 	 */
 	private int currency_pair;
-	
+
 	/**
 	 * X軸(時間)
 	 */
@@ -83,9 +89,17 @@ public class FXChart extends JPanel {
 	/**
 	 * 単純移動平均
 	 */
-	TimeSeriesCollection tscSMA;
-//	private TimeSeries[] sma;
+	private TimeSeriesCollection tscSMA;
 	
+	/**
+	 * 一目均衡表
+	 */
+	private TimeSeriesCollection[] tscICHI;
+	private TimeSeriesCollection tscICHI0;
+	private TimeSeriesCollection tscICHI1;
+	
+	IndeterminateProgressBar progress;
+	DecimalFormat df;
 	
 	/**
 	 * @param args
@@ -121,7 +135,7 @@ public class FXChart extends JPanel {
 		cmb_period.setSelectedIndex(CandleStick.M5);
 		cmb_period.addActionListener(panel.new ChartChanger());
 		
-		JPanel header = new JPanel();
+		JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		header.add(cmb_currency_pair);
 		header.add(cmb_period);
 		frame.getContentPane().add(header, BorderLayout.NORTH);
@@ -129,6 +143,7 @@ public class FXChart extends JPanel {
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    frame.setBounds( 10, 10, 600, 480);
 	    frame.setVisible(true);
+	    
 	    
 	    Timer timer = panel.new DataGenerator(1000);
 		timer.start();
@@ -140,20 +155,24 @@ public class FXChart extends JPanel {
 		this.max_visible = max;
 		this.currency_pair = currency_pair;
 		this.period = period;
+		progress = new IndeterminateProgressBar();
 		cs = new CandleStick(currency_pair, period);
 		candle = new OHLCSeries("CandleStick");
 		ChartPanel chart = new ChartPanel(createChart());
 		add(chart);
+		df = new DecimalFormat("###.000");
 	}
 	
 	private JFreeChart createChart() {
+		progress.showProgress("チャートを作成しています");
+		
 		// 定義
-		JFreeChart jfreechart;
 		XYPlot plot;
 		NumberAxis range;
 		OHLCSeriesCollection osc;
 		CandlestickRenderer cr;
 		XYLineAndShapeRenderer xyr;
+		XYDifferenceRenderer xdr;
 		SegmentedTimeline fxtimeline;
 		
 		// プロットの作成
@@ -189,28 +208,43 @@ public class FXChart extends JPanel {
 		
 		// テクニカル指標
 		tscSMA = FXChartUtils.getSimpleMovingAverage(candle);
+		tscICHI = FXChartUtils.getIchimoku(candle);
+		tscICHI0 = tscICHI[0];
+		tscICHI1 = tscICHI[1];
 		
 		// プロットにデータを追加
 		plot.setDataset(0, osc);
 		plot.setDataset(1, tscSMA);
+		plot.setDataset(2, tscICHI0);
+		plot.setDataset(3, tscICHI1);
 		
 		// データと軸の対応関係を設定
 		plot.mapDatasetToDomainAxis(0, 0);
 		plot.mapDatasetToRangeAxis(0, 0);
 		plot.mapDatasetToDomainAxis(1, 0);
 		plot.mapDatasetToRangeAxis(1, 0);		
+		plot.mapDatasetToDomainAxis(2, 0);
+		plot.mapDatasetToRangeAxis(2, 0);		
+		plot.mapDatasetToDomainAxis(3, 0);
+		plot.mapDatasetToRangeAxis(3, 0);		
 		
 		// 見た目の設定
 		// ロウソク足
 		cr = FXChartUtils.getCandleStickRenderer();
-		plot.setRenderer(0, cr);
-
+		plot.setRenderer(0, cr);		
+		// 移動平均
 		xyr = FXChartUtils.getSimpleMovingAverateRenderer();
-		plot.setRenderer(1, xyr);
-		
+		plot.setRenderer(1, xyr);		
+		// 一目均衡表
+		xyr = FXChartUtils.getIchimokuRenderer();
+		plot.setRenderer(2, xyr);
+		xdr = FXChartUtils.getIchimokuKumoRenderer();
+		plot.setRenderer(3, xdr);
+		// 重ね順
 		plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
 		
-		jfreechart = new JFreeChart(null, null, plot, false);
+		JFreeChart jfreechart = new JFreeChart(null, null, plot, false);
+		progress.hideProgress();
 		
 		return jfreechart;
 	}
@@ -218,7 +252,8 @@ public class FXChart extends JPanel {
 	@SuppressWarnings("unchecked")
 	private void updateSeries(){
 		// なぜか取得日時が逆戻りするので、戻った場合には何もしない。
-		RegularTimePeriod prd = cs.getCurrentRate();
+		RegularTimePeriod prd;
+		prd = cs.getCurrentRate(FXUtils.getRateData());
 		if (prd.compareTo(pre_period) >= 0) {
 			int index = candle.indexOf(prd);
 			if (index >= 0) {
@@ -230,21 +265,25 @@ public class FXChart extends JPanel {
 					cs.getBid_low(), cs.getBid_close());
 			// 移動平均
 			tscSMA = FXChartUtils.updatePartOfSMA(candle, tscSMA);
+			// 一目均衡表
+			FXChartUtils.updatePartOfIchimoku(candle, tscICHI);
 			
 			// マーカー
 			marker.setValue(cs.getBid_close());
+			marker.setLabel(df.format(cs.getBid_close()));
 			
 			// 時間の表示範囲
 			domain.setMinimumDate(FXUtils.calcDateAxisMin(prd.getEnd(), period, max_visible));
-			domain.setMaximumDate(prd.getEnd());
-			
+			// 最大は先行スパン？
+			//domain.setMaximumDate(prd.getEnd());
+
 			pre_period = prd;
 		}	
 	}
 	
 	private void updateChart() {
 		// プログレスバーを表示
-		JFrame progress = IndeterminateProgressBar.show("チャートを更新しています");
+		//progress.showProgress("チャートを更新しています");
 		
 		boolean changed = false;
 		if(period != cmb_period.getSelectedIndex()){
@@ -269,16 +308,19 @@ public class FXChart extends JPanel {
 			}
 			// 移動平均
 			tscSMA = FXChartUtils.updateAllOfSMA(candle, tscSMA);
-			// 時間の表示範囲
+			// 一目均衡表
+			tscICHI = FXChartUtils.getIchimoku(candle);
+			
+/*			// 時間の表示範囲
 			if(candle.getItemCount() >= 1){
 				domain.setMinimumDate(FXUtils.calcDateAxisMin(candle.getPeriod(candle.getItemCount() - 1).getEnd(), period, max_visible));
-				domain.setMaximumDate(candle.getPeriod(candle.getItemCount() - 1).getEnd());
+				//domain.setMaximumDate(candle.getPeriod(candle.getItemCount() - 1).getEnd());
 			}
-			
+*/			
 			changed = false;
 			
-			// プログレスバーを消す
-			progress.dispose();
+			// プログレスバーを隠す
+			//progress.hideProgress();
 		}
 	}
 
@@ -305,13 +347,8 @@ public class FXChart extends JPanel {
 	class ChartChanger implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
-			// プログレスバーを表示
-			JFrame progress = IndeterminateProgressBar.show("チャートを更新しています");
 			// チャートを更新
-			updateChart();
-			// プログレスバーを消す
-			progress.dispose();
-			
+			updateChart();			
 		}
 		
 	}
