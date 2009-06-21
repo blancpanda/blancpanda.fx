@@ -254,7 +254,9 @@ public class CandleStick implements Serializable {
 	@SuppressWarnings("unchecked")
 	public RegularTimePeriod getCurrentRate(HashMap map){
 		// 最新のデータを取得してプロパティを変える
-
+		if(map == null){
+			return null;
+		}else{
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(Long.parseLong((String) map.get("timestamp")));
 		time = sdf.format(cal.getTime());
@@ -282,6 +284,7 @@ public class CandleStick implements Serializable {
 		}
 		
 		return FXUtils.getRegularTimePeriod(getDate(), period_cd);
+		}
 	}
 	
 	private void initRate() {

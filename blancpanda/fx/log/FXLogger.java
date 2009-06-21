@@ -105,39 +105,42 @@ public class FXLogger {
 		public void actionPerformed(ActionEvent e) {
 			insertOrUpdateCandleStick();
 		}
-		
+
 		@SuppressWarnings("unchecked")
-		private void insertOrUpdateCandleStick(){
+		private void insertOrUpdateCandleStick() {
 			CandleStickDao csDao = new CandleStickDao();
 			RegularTimePeriod[] prd = new RegularTimePeriod[PERIODS];
 			// 各CandleStickを更新
 			HashMap map = FXUtils.getRateData();
-			for (int p = 0; p < 5; p++) {
-				for (int c = 0; c < 16; c++) {
-					prd[p] = cs[c][p].getCurrentRate(map);
-					if (prd[p].compareTo(pre_period[p]) > 0) {
-						if (insert_cs[c][p] != null) {
-							// DBに登録
-							Transaction transaction = csDao.getSession()
-							.beginTransaction();
-							csDao.save(insert_cs[c][p]);
-							
-							// [重要] 分離オブジェクトにする ***************
-							csDao.getSession().flush();
-							csDao.getSession().evict(insert_cs[c][p]);
-							//****************************************
-							
-							transaction.commit();
-							printlog("Insert:" + insert_cs[c][p].getCsid());
+			// 最新レートの取得に失敗した場合には何もしない
+			if (map != null) {
+				for (int p = 0; p < 5; p++) {
+					for (int c = 0; c < 16; c++) {
+						prd[p] = cs[c][p].getCurrentRate(map);
+						if (prd[p].compareTo(pre_period[p]) > 0) {
+							if (insert_cs[c][p] != null) {
+								// DBに登録
+								Transaction transaction = csDao.getSession()
+										.beginTransaction();
+								csDao.save(insert_cs[c][p]);
+
+								// [重要] 分離オブジェクトにする ***************
+								csDao.getSession().flush();
+								csDao.getSession().evict(insert_cs[c][p]);
+								// ****************************************
+
+								transaction.commit();
+								printlog("Insert:" + insert_cs[c][p].getCsid());
+							}
+							// 次のピリオドに移行(レートを終値で初期化)
+							cs[c][p].clearRate();
 						}
-						// 次のピリオドに移行(レートを終値で初期化)
-						cs[c][p].clearRate();
+						// 登録用のCandleStickに待避
+						insert_cs[c][p] = cs[c][p];
 					}
-					// 登録用のCandleStickに待避
-					insert_cs[c][p] = cs[c][p];
-				}
-				if (prd[p].compareTo(pre_period[p]) > 0) {
-					pre_period[p] = prd[p];
+					if (prd[p].compareTo(pre_period[p]) > 0) {
+						pre_period[p] = prd[p];
+					}
 				}
 			}
 		}

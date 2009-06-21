@@ -47,16 +47,24 @@ public class FXUtils {
 			urlconn = url.openConnection();
 			is = urlconn.getInputStream();
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("みんなのFXへの接続に失敗しました");
+			return null;
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("みんなのFXへの接続に失敗しました");
+			return null;
 		}
 		try {
 			map = JSON.decode(is, HashMap.class);
 		} catch (JSONException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("JSONの解析に失敗しました");
+			return null;
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("JSONの解析に失敗しました");
+			return null;
 		}
 		return map;
 	}
