@@ -175,14 +175,34 @@ public class BollingerBandsFibonacciRatios {
 				);											 // LOW1
 		xyr.setSeriesStroke(LOW2, new BasicStroke(1, 1, 1)); // LOW2
 		xyr.setSeriesStroke(LOW3, new BasicStroke(2, 1, 1)); // LOW3
-		xyr.setSeriesPaint(UP3, Color.GREEN); // UP3
-		xyr.setSeriesPaint(UP2, Color.GREEN); // UP2
-		xyr.setSeriesPaint(UP1, Color.GREEN); // UP1
-		xyr.setSeriesPaint(MA, Color.GREEN); // MA
-		xyr.setSeriesPaint(LOW1, Color.GREEN); // LOW1
-		xyr.setSeriesPaint(LOW2, Color.GREEN); // LOW2
-		xyr.setSeriesPaint(LOW3, Color.GREEN); // LOW3
+		xyr.setSeriesPaint(UP3, new Color(51, 204, 204));	// UP3
+		xyr.setSeriesPaint(UP2, new Color(51, 204, 204));	// UP2
+		xyr.setSeriesPaint(UP1, new Color(51, 204, 204));	// UP1
+		xyr.setSeriesPaint(MA, new Color(51, 204, 204));	// MA
+		xyr.setSeriesPaint(LOW1, new Color(51, 204, 204));	// LOW1
+		xyr.setSeriesPaint(LOW2, new Color(51, 204, 204));	// LOW2
+		xyr.setSeriesPaint(LOW3, new Color(51, 204, 204));	// LOW3
 		return xyr;
 	}
-
+	
+	public static void showBOFI(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(UP3, true);
+		xyr.setSeriesLinesVisible(UP2, true);
+		xyr.setSeriesLinesVisible(UP1, true);
+		xyr.setSeriesLinesVisible(MA, true);
+		xyr.setSeriesLinesVisible(LOW1, true);
+		xyr.setSeriesLinesVisible(LOW2, true);
+		xyr.setSeriesLinesVisible(LOW3, true);
+	}
+	
+	public static void hideBOFI(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(UP3, false);
+		xyr.setSeriesLinesVisible(UP2, false);
+		xyr.setSeriesLinesVisible(UP1, false);
+		xyr.setSeriesLinesVisible(MA, false);
+		xyr.setSeriesLinesVisible(LOW1, false);
+		xyr.setSeriesLinesVisible(LOW2, false);
+		xyr.setSeriesLinesVisible(LOW3, false);
+	}
+	
 }

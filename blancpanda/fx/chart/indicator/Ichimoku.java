@@ -206,25 +206,51 @@ public class Ichimoku {
 	public static XYLineAndShapeRenderer getIchimokuRenderer() {
 		XYLineAndShapeRenderer xyr = new XYLineAndShapeRenderer();
 		xyr.setSeriesShapesVisible(ICHIMOKU_KIJUN, false); // shapeを非表示にする
-		xyr.setSeriesStroke(ICHIMOKU_KIJUN, new BasicStroke(1, 1, 1));
+		xyr.setSeriesStroke(ICHIMOKU_KIJUN, new BasicStroke(2, 1, 1));
 		xyr.setSeriesShapesVisible(ICHIMOKU_TENKAN, false); // shapeを非表示にする
-		xyr.setSeriesStroke(ICHIMOKU_TENKAN, new BasicStroke(1, 1, 1));
+		xyr.setSeriesStroke(ICHIMOKU_TENKAN, new BasicStroke(2, 1, 1));
 		xyr.setSeriesShapesVisible(ICHIMOKU_CHIKO, false);
 		xyr.setSeriesStroke(ICHIMOKU_CHIKO, new BasicStroke(1, 1, 1));
-		xyr.setSeriesPaint(ICHIMOKU_KIJUN, Color.CYAN); // 基準線はシアン
-		xyr.setSeriesPaint(ICHIMOKU_TENKAN, Color.MAGENTA); // 転換線はマゼンタ
-		xyr.setSeriesPaint(ICHIMOKU_CHIKO, Color.ORANGE); // 遅行線はオレンジ
+		xyr.setSeriesPaint(ICHIMOKU_KIJUN, new Color(0, 102, 255)); // 基準線は青
+		xyr.setSeriesPaint(ICHIMOKU_TENKAN, new Color(255, 0, 102)); // 転換線は赤
+		xyr.setSeriesPaint(ICHIMOKU_CHIKO, new Color(255, 153, 0)); // 遅行線はオレンジ
 		return xyr;
 	}
 
 	public static XYDifferenceRenderer getIchimokuKumoRenderer() {
-		XYDifferenceRenderer xdr = new XYDifferenceRenderer(new Color(102, 204, 255, 51),
-				new Color(255, 102, 204, 51), false);
+		XYDifferenceRenderer xdr = new XYDifferenceRenderer(new Color(102, 204, 255, 102),
+				new Color(255, 102, 204, 102), false);
 		xdr.setBaseStroke(new BasicStroke(1, 1, 1));
 		xdr.setSeriesPaint(ICHIMOKU_SENKO1, new Color(153, 255, 153, 102));
-		xdr.setSeriesPaint(ICHIMOKU_SENKO2, new Color(153, 0, 153, 102));
+		xdr.setSeriesPaint(ICHIMOKU_SENKO2, new Color(255, 153, 153, 102));
 		return xdr;
 	}
-
-
+	
+	public static void showICHI(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(ICHIMOKU_KIJUN, true);
+		xyr.setSeriesLinesVisible(ICHIMOKU_TENKAN, true);
+		xyr.setSeriesLinesVisible(ICHIMOKU_CHIKO, true);
+	}
+	
+	public static void showICHI_KUMO(XYDifferenceRenderer xdr){
+		xdr.setSeriesPaint(ICHIMOKU_SENKO1, new Color(153, 255, 153, 102));
+		xdr.setSeriesPaint(ICHIMOKU_SENKO2, new Color(255, 153, 153, 102));
+		xdr.setPositivePaint(new Color(102, 204, 255, 102));
+		xdr.setNegativePaint(new Color(255, 102, 204, 102));
+	}
+	
+	public static void hideICHI(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(ICHIMOKU_KIJUN, false);
+		xyr.setSeriesLinesVisible(ICHIMOKU_TENKAN, false);
+		xyr.setSeriesLinesVisible(ICHIMOKU_CHIKO, false);
+	}
+	
+	public static void hideICHI_KUMO(XYDifferenceRenderer xdr){
+		// 消し方がよくわからないので透明にする
+		xdr.setSeriesPaint(ICHIMOKU_SENKO1, new Color(153, 255, 153, 0));
+		xdr.setSeriesPaint(ICHIMOKU_SENKO2, new Color(255, 153, 153, 0));
+		xdr.setPositivePaint(new Color(102, 204, 255, 0));
+		xdr.setNegativePaint(new Color(255, 102, 204, 0));
+	}
+	
 }

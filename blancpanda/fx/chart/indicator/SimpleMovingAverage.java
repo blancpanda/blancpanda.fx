@@ -94,7 +94,7 @@ public class SimpleMovingAverage {
 		sma.addSeries(sma_longer);
 	}
 
-	public static XYLineAndShapeRenderer getSimpleMovingAverateRenderer() {
+	public static XYLineAndShapeRenderer getSimpleMovingAverageRenderer() {
 		XYLineAndShapeRenderer xyr = new XYLineAndShapeRenderer();
 		xyr.setSeriesLinesVisible(SMA_CLOSE, false); // closeRateを非表示にする
 		xyr.setSeriesShapesVisible(SMA_CLOSE, false);
@@ -107,5 +107,13 @@ public class SimpleMovingAverage {
 		return xyr;
 	}
 
+	public static void showSimpleMovingAverage(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(SMA_SHORTER, true);
+		xyr.setSeriesLinesVisible(SMA_LONGER, true);
+	}
 
+	public static void hideSimpleMovingAverage(XYLineAndShapeRenderer xyr){
+		xyr.setSeriesLinesVisible(SMA_SHORTER, false);
+		xyr.setSeriesLinesVisible(SMA_LONGER, false);
+	}
 }

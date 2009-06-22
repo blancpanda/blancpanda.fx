@@ -2,18 +2,24 @@ package blancpanda.fx.chart;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.SegmentedTimeline;
@@ -44,6 +50,9 @@ public class FXChart extends JPanel {
 
 	private static JComboBox cmb_currency_pair;
 	private static JComboBox cmb_period;
+	private static JCheckBox chk_sma;
+	private static JCheckBox chk_ichi;
+	private static JCheckBox chk_bofi;
 
 	/**
 	 * データベースへの接続の有無
@@ -64,6 +73,11 @@ public class FXChart extends JPanel {
 	 * 通貨ペア
 	 */
 	private int currency_pair;
+
+	/**
+	 * プロット
+	 */
+	private XYPlot plot;
 
 	/**
 	 * X軸(時間)
@@ -117,8 +131,11 @@ public class FXChart extends JPanel {
 		JFrame frame = new JFrame("リアルタイム為替チャート");
 		FXChart panel = new FXChart(true, CandleStick.USDJPY, CandleStick.M5,
 				60);
+		EmptyBorder chart_border = new EmptyBorder(10, 10, 10, 10);
+		panel.setBorder(chart_border);
 		frame.getContentPane().add(panel, BorderLayout.CENTER);
 
+		// 通貨ペアコンボボックス
 		String[] str_currency_pair = { "USD/CAD", "EUR/JPY", "NZD/JPY",
 				"GBP/CHF", "USD/CHF", "ZAR/JPY", "NZD/USD", "CAD/JPY",
 				"EUR/GBP", "USD/JPY", // 米ドル円
@@ -128,6 +145,7 @@ public class FXChart extends JPanel {
 		cmb_currency_pair.setSelectedIndex(CandleStick.USDJPY);
 		cmb_currency_pair.addActionListener(panel.new ChartChanger());
 
+		// ピリオドコンボボックス
 		String[] str_period = { "M1", "M5", "M30", "H1", "H2" };
 		cmb_period = new JComboBox(str_period);
 		cmb_period.setSelectedIndex(CandleStick.M5);
@@ -138,12 +156,33 @@ public class FXChart extends JPanel {
 		header.add(cmb_period);
 		frame.getContentPane().add(header, BorderLayout.NORTH);
 
+		// 移動平均チェックボックス
+		chk_sma = new JCheckBox("移動平均", true);
+		chk_sma.addChangeListener(panel.new SMAListener());
+		// 一目均衡表チェックボックス
+		chk_ichi = new JCheckBox("一目均衡表", true);
+		chk_ichi.addChangeListener(panel.new ICHIListener());
+		// ボリンジャー-フィボナッチチェックボックス
+		chk_bofi = new JCheckBox("ボリンジャー-フィボナッチ", true);
+		chk_bofi.addChangeListener(panel.new BOFIListener());
+
+		JPanel right_inner = new JPanel(new GridLayout(3, 1));
+		right_inner.add(chk_sma);
+		right_inner.add(chk_ichi);
+		right_inner.add(chk_bofi);
+		EmptyBorder right_border = new EmptyBorder(10, 10, 10, 10);
+		right_inner.setBorder(right_border);
+
+		JPanel right = new JPanel();
+		right.add(right_inner, BorderLayout.CENTER);
+		frame.getContentPane().add(right, BorderLayout.EAST);
+
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setBounds(10, 10, 600, 480);
+		frame.setBounds(10, 10, 800, 600);
 		frame.setVisible(true);
 
 		Timer timer = panel.new DataGenerator(1000);
-//		timer.start();
+		timer.start();
 	}
 
 	public FXChart(boolean db, int currency_pair, int period, int max) {
@@ -164,7 +203,6 @@ public class FXChart extends JPanel {
 		progress.showProgress("チャートを作成しています");
 
 		// 定義
-		XYPlot plot;
 		NumberAxis range;
 		OHLCSeriesCollection osc;
 		CandlestickRenderer cr;
@@ -192,6 +230,7 @@ public class FXChart extends JPanel {
 		// プロットに軸を追加
 		plot.setDomainAxis(0, domain);
 		plot.setRangeAxis(0, range);
+		plot.setRangeAxisLocation(0, AxisLocation.BOTTOM_OR_RIGHT);
 		plot.addRangeMarker(marker);
 
 		// 各データの作成
@@ -234,7 +273,7 @@ public class FXChart extends JPanel {
 		cr = FXChartUtils.getCandleStickRenderer();
 		plot.setRenderer(0, cr);
 		// 移動平均
-		xyr = SimpleMovingAverage.getSimpleMovingAverateRenderer();
+		xyr = SimpleMovingAverage.getSimpleMovingAverageRenderer();
 		plot.setRenderer(1, xyr);
 		// 一目均衡表
 		xyr = Ichimoku.getIchimokuRenderer();
@@ -368,6 +407,52 @@ public class FXChart extends JPanel {
 		public void actionPerformed(ActionEvent e) {
 			// チャートを更新
 			updateChart();
+		}
+
+	}
+
+	class SMAListener implements ChangeListener {
+
+		public void stateChanged(ChangeEvent e) {
+			if (chk_sma.isSelected()) {
+				SimpleMovingAverage
+						.showSimpleMovingAverage((XYLineAndShapeRenderer) plot
+								.getRenderer(1));
+			} else {
+				SimpleMovingAverage
+						.hideSimpleMovingAverage((XYLineAndShapeRenderer) plot
+								.getRenderer(1));
+			}
+		}
+
+	}
+
+	class ICHIListener implements ChangeListener {
+
+		public void stateChanged(ChangeEvent e) {
+			if (chk_ichi.isSelected()) {
+				Ichimoku.showICHI((XYLineAndShapeRenderer) plot.getRenderer(2));
+				Ichimoku.showICHI_KUMO((XYDifferenceRenderer) plot
+						.getRenderer(3));
+			} else {
+				Ichimoku.hideICHI((XYLineAndShapeRenderer) plot.getRenderer(2));
+				Ichimoku.hideICHI_KUMO((XYDifferenceRenderer) plot
+						.getRenderer(3));
+			}
+		}
+
+	}
+
+	class BOFIListener implements ChangeListener {
+
+		public void stateChanged(ChangeEvent e) {
+			if (chk_bofi.isSelected()) {
+				BollingerBandsFibonacciRatios
+						.showBOFI((XYLineAndShapeRenderer) plot.getRenderer(4));
+			} else {
+				BollingerBandsFibonacciRatios
+						.hideBOFI((XYLineAndShapeRenderer) plot.getRenderer(4));
+			}
 		}
 
 	}
