@@ -6,6 +6,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 
 import javax.swing.JCheckBox;
@@ -298,45 +299,45 @@ public class FXChart extends JPanel {
 		// 最新レートの取得に失敗した場合には何もしない
 		HashMap map = FXUtils.getRateData();
 		if (map != null) {
-			// なぜか取得日時が逆戻りするので、戻った場合には何もしない。
-			RegularTimePeriod prd;
-			prd = cs.getCurrentRate(map);
-			if (prd.compareTo(pre_period) >= 0) {
-				int index = candle.indexOf(prd);
-				if (index >= 0) {
-					candle.remove(prd);
-				} else {
-					cs.clearRate();
+			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(Long.parseLong((String) map.get("timestamp")));
+			if (FXUtils.isMarketTime(cal.getTime())) { // 最新レートを取得できても、取引時間外なら何もしない
+				// なぜか取得日時が逆戻りするので、戻った場合には何もしない。
+				RegularTimePeriod prd;
+				prd = cs.getCurrentRate(map);
+				if (prd.compareTo(pre_period) >= 0) {
+					int index = candle.indexOf(prd);
+					if (index >= 0) {
+						candle.remove(prd);
+					} else {
+						cs.clearRate();
+					}
+					candle.add(prd, cs.getBid_open(), cs.getBid_high(), cs
+							.getBid_low(), cs.getBid_close());
+					// 移動平均
+					SimpleMovingAverage.updatePartOfSMA(candle, tscSMA);
+					// 一目均衡表
+					Ichimoku.updatePartOfIchimoku(candle, tscICHI);
+					// ボリンジャー-フィボナッチ
+					BollingerBandsFibonacciRatios
+							.updatePartOfBollingerFibonacci(candle, tscBOFI);
+
+					// マーカー
+					marker.setValue(cs.getBid_close());
+					marker.setLabel(df.format(cs.getBid_close()));
+
+					// 時間の表示範囲
+					domain.setMinimumDate(FXChartUtils.addTimePeriod(prd, -max_visible).getStart());
+					// 最大は最新の30本後
+					domain.setMaximumDate(FXChartUtils.addTimePeriod(prd, 30).getEnd());
+
+					pre_period = prd;
 				}
-				candle.add(prd, cs.getBid_open(), cs.getBid_high(), cs
-						.getBid_low(), cs.getBid_close());
-				// 移動平均
-				SimpleMovingAverage.updatePartOfSMA(candle, tscSMA);
-				// 一目均衡表
-				Ichimoku.updatePartOfIchimoku(candle, tscICHI);
-				// ボリンジャー-フィボナッチ
-				BollingerBandsFibonacciRatios.updatePartOfBollingerFibonacci(
-						candle, tscBOFI);
-
-				// マーカー
-				marker.setValue(cs.getBid_close());
-				marker.setLabel(df.format(cs.getBid_close()));
-
-				// 時間の表示範囲
-				domain.setMinimumDate(FXUtils.calcDateAxisMin(prd.getEnd(),
-						period, max_visible));
-				// 最大は先行スパン？
-				// domain.setMaximumDate(prd.getEnd());
-
-				pre_period = prd;
 			}
 		}
 	}
 
 	private void updateChart() {
-		// プログレスバーを表示
-		// progress.showProgress("チャートを更新しています");
-
 		boolean changed = false;
 		if (period != cmb_period.getSelectedIndex()) {
 			// ピリオドが変わった
@@ -367,19 +368,7 @@ public class FXChart extends JPanel {
 			BollingerBandsFibonacciRatios.updateAllOfBollingerFibonacci(candle,
 					tscBOFI);
 
-			/*
-			 * // 時間の表示範囲 if(candle.getItemCount() >= 1){
-			 * domain.setMinimumDate(FXUtils
-			 * .calcDateAxisMin(candle.getPeriod(candle.getItemCount() -
-			 * 1).getEnd(), period, max_visible));
-			 * //domain.setMaximumDate(candle.getPeriod(candle.getItemCount() -
-			 * 1).getEnd()); }
-			 */
-
 			changed = false;
-
-			// プログレスバーを隠す
-			// progress.hideProgress();
 		}
 	}
 

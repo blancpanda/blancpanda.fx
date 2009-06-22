@@ -3,6 +3,7 @@ package blancpanda.fx.log;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -37,13 +38,18 @@ public class FXLogger {
 	 */
 	private RegularTimePeriod[] pre_period;
 
+	/**
+	 * 取引時間フラグ
+	 */
+	private boolean market_time;
+
 	// 通貨ペアは16種類
 	private static final int CURRENCY_PAIRS = 16;
 	// ピリオドは5種類
 	private static final int PERIODS = 5;
 
 	private static JTextPane console;
-
+	
 	public FXLogger() {
 		Date date = new Date();
 		// CandleStickの生成
@@ -60,6 +66,9 @@ public class FXLogger {
 			// 現在日付で初期化
 			pre_period[p] = FXUtils.getRegularTimePeriod(date, p);
 		}
+		
+		// 取引時間内と仮定して開始
+		market_time = true;
 	}
 
 	/**
@@ -89,6 +98,69 @@ public class FXLogger {
 		} catch (BadLocationException e) {
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	private void updateCandleStick() {
+		// 各CandleStickを更新
+		HashMap map = FXUtils.getRateData();
+		// 最新レートの取得に失敗した場合には何もしない
+		if (map != null) {
+			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(Long.parseLong((String) map
+					.get("timestamp")));
+			if (FXUtils.isMarketTime(cal.getTime())) { // 取引時間チェック
+				if(!market_time){
+					// 取引開始
+					printlog("取引開始");
+					market_time = true;
+				}
+				insertOrUpdateCandleStick(map);
+			} else {
+				if(market_time){
+					// 取引終了
+					// 最後のCandleStickを登録する
+					insertOrUpdateCandleStick(map);
+					printlog("取引終了");
+					market_time = false;
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void insertOrUpdateCandleStick(HashMap map){
+		CandleStickDao csDao = new CandleStickDao();
+		RegularTimePeriod[] prd = new RegularTimePeriod[PERIODS];
+		for (int p = 0; p < 5; p++) {
+			for (int c = 0; c < 16; c++) {
+				prd[p] = cs[c][p].getCurrentRate(map);
+				if (prd[p].compareTo(pre_period[p]) > 0) {
+					if (insert_cs[c][p] != null) {
+						// DBに登録
+						Transaction transaction = csDao
+								.getSession().beginTransaction();
+						csDao.save(insert_cs[c][p]);
+
+						// [重要] 分離オブジェクトにする ***************
+						csDao.getSession().flush();
+						csDao.getSession().evict(insert_cs[c][p]);
+						// ****************************************
+
+						transaction.commit();
+						printlog("Insert:"
+								+ insert_cs[c][p].getCsid());
+					}
+					// 次のピリオドに移行(レートを終値で初期化)
+					cs[c][p].clearRate();
+				}
+				// 登録用のCandleStickに待避
+				insert_cs[c][p] = cs[c][p];
+			}
+			if (prd[p].compareTo(pre_period[p]) > 0) {
+				pre_period[p] = prd[p];
+			}
+		}		
+	}
 
 	class DataGenerator extends Timer implements ActionListener {
 
@@ -103,46 +175,8 @@ public class FXLogger {
 		private static final long serialVersionUID = 20090615L;
 
 		public void actionPerformed(ActionEvent e) {
-			insertOrUpdateCandleStick();
+			updateCandleStick();
 		}
 
-		@SuppressWarnings("unchecked")
-		private void insertOrUpdateCandleStick() {
-			CandleStickDao csDao = new CandleStickDao();
-			RegularTimePeriod[] prd = new RegularTimePeriod[PERIODS];
-			// 各CandleStickを更新
-			HashMap map = FXUtils.getRateData();
-			// 最新レートの取得に失敗した場合には何もしない
-			if (map != null) {
-				for (int p = 0; p < 5; p++) {
-					for (int c = 0; c < 16; c++) {
-						prd[p] = cs[c][p].getCurrentRate(map);
-						if (prd[p].compareTo(pre_period[p]) > 0) {
-							if (insert_cs[c][p] != null) {
-								// DBに登録
-								Transaction transaction = csDao.getSession()
-										.beginTransaction();
-								csDao.save(insert_cs[c][p]);
-
-								// [重要] 分離オブジェクトにする ***************
-								csDao.getSession().flush();
-								csDao.getSession().evict(insert_cs[c][p]);
-								// ****************************************
-
-								transaction.commit();
-								printlog("Insert:" + insert_cs[c][p].getCsid());
-							}
-							// 次のピリオドに移行(レートを終値で初期化)
-							cs[c][p].clearRate();
-						}
-						// 登録用のCandleStickに待避
-						insert_cs[c][p] = cs[c][p];
-					}
-					if (prd[p].compareTo(pre_period[p]) > 0) {
-						pre_period[p] = prd[p];
-					}
-				}
-			}
-		}
 	}
 }

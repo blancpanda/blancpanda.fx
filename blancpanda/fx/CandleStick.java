@@ -23,7 +23,7 @@ public class CandleStick implements Serializable {
 	public static final int M30 = 2; // 30分足
 	public static final int H1 = 3; // 1時間足
 	public static final int H2 = 4; // 2時間足
-//	public static final int D1 = 5; // 日足
+	public static final int D1 = 5; // 日足
 
 	// currency_pair の選択肢
 	public static final int USDCAD = 0; 	//

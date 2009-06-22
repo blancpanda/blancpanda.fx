@@ -17,6 +17,7 @@ import net.arnx.jsonic.JSON;
 import net.arnx.jsonic.JSONException;
 
 import org.jfree.chart.axis.SegmentedTimeline;
+import org.jfree.data.time.Day;
 import org.jfree.data.time.Hour;
 import org.jfree.data.time.Minute;
 import org.jfree.data.time.RegularTimePeriod;
@@ -30,12 +31,6 @@ import blancpanda.fx.timeperiod.Minute5;
  * 
  */
 public class FXUtils {
-	
-	public static final long M1_SEGMENT_SIZE = 1000 * 60;
-	public static final long M5_SEGMENT_SIZE = M1_SEGMENT_SIZE * 5;
-	public static final long M30_SEGMENT_SIZE = M1_SEGMENT_SIZE * 30;
-	public static final long H1_SEGMENT_SIZE = M1_SEGMENT_SIZE * 60;
-	public static final long H2_SEGMENT_SIZE = H1_SEGMENT_SIZE * 2;
 	
 	/**
 	 * 取引時間チェック
@@ -82,7 +77,7 @@ public class FXUtils {
 			}
 		}else{
 			//System.out.println("取引時間内です。");
-			ret = false;
+			ret = true;
 		}
 		
 		return ret;
@@ -119,46 +114,7 @@ public class FXUtils {
 			return null;
 		}
 		
-		// JSONの解析に成功しても、timestampが取引時間外ならnullを返す
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(Long.parseLong((String) map.get("timestamp")));
-		if(!isMarketTime(cal.getTime())){
-			return null;
-		}
-		
 		return map;
-	}
-	
-	public static Date calcDateAxisMin(Date date, int period, int cnt){
-		Date ret = null;
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		switch (period) {
-		case CandleStick.M1:
-			cal.setTimeInMillis(cal.getTimeInMillis() - (M1_SEGMENT_SIZE * cnt));
-			ret = cal.getTime();
-			break;
-		case CandleStick.M5:
-			cal.setTimeInMillis(cal.getTimeInMillis() - (M5_SEGMENT_SIZE * cnt));
-			ret = cal.getTime();
-			break;
-		case CandleStick.M30:
-			cal.setTimeInMillis(cal.getTimeInMillis() - (M30_SEGMENT_SIZE * cnt));
-			ret = cal.getTime();
-			break;
-		case CandleStick.H1:
-			cal.setTimeInMillis(cal.getTimeInMillis() - (H1_SEGMENT_SIZE * cnt));
-			ret = cal.getTime();
-			break;
-		case CandleStick.H2:
-			cal.setTimeInMillis(cal.getTimeInMillis() - (H2_SEGMENT_SIZE * cnt));
-			ret = cal.getTime();
-			break;
-		default:
-			System.out.println("ピリオドが不正です。");
-			break;
-		}
-		return ret;
 	}
 	
 	public static RegularTimePeriod getRegularTimePeriod(Date date, int period) {
@@ -178,6 +134,9 @@ public class FXUtils {
 			break;
 		case CandleStick.H2:
 			ret = new Hour2(date);
+			break;
+		case CandleStick.D1:
+			ret = new Day(date);
 			break;
 		default:
 			System.out.println("ピリオドが不正です。");
