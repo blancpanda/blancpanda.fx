@@ -41,6 +41,7 @@ import blancpanda.fx.FXUtils;
 import blancpanda.fx.chart.indicator.BollingerBandsFibonacciRatios;
 import blancpanda.fx.chart.indicator.Ichimoku;
 import blancpanda.fx.chart.indicator.SimpleMovingAverage;
+import blancpanda.fx.price.Price;
 
 public class FXChart extends JPanel {
 
@@ -123,6 +124,7 @@ public class FXChart extends JPanel {
 	private TimeSeriesCollection tscBOFI;
 
 	private IndeterminateProgressBar progress;
+	private Price price;
 	private DecimalFormat df;
 
 	/**
@@ -137,12 +139,7 @@ public class FXChart extends JPanel {
 		frame.getContentPane().add(panel, BorderLayout.CENTER);
 
 		// 通貨ペアコンボボックス
-		String[] str_currency_pair = { "USD/CAD", "EUR/JPY", "NZD/JPY",
-				"GBP/CHF", "USD/CHF", "ZAR/JPY", "NZD/USD", "CAD/JPY",
-				"EUR/GBP", "USD/JPY", // 米ドル円
-				"CHF/JPY", "GBP/JPY", // 英ポンド円
-				"GBP/USD", "AUD/JPY", "EUR/USD", "AUD/USD" };
-		cmb_currency_pair = new JComboBox(str_currency_pair);
+		cmb_currency_pair = new JComboBox(FXUtils.STR_CURRENCY_PAIR);
 		cmb_currency_pair.setSelectedIndex(CandleStick.USDJPY);
 		cmb_currency_pair.addActionListener(panel.new ChartChanger());
 
@@ -173,17 +170,19 @@ public class FXChart extends JPanel {
 		right_inner.add(chk_bofi);
 		EmptyBorder right_border = new EmptyBorder(10, 10, 10, 10);
 		right_inner.setBorder(right_border);
-
+		
 		JPanel right = new JPanel();
 		right.add(right_inner, BorderLayout.CENTER);
 		frame.getContentPane().add(right, BorderLayout.EAST);
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setBounds(10, 10, 800, 600);
+		frame.setBounds(0, 0, 800, 600);
 		frame.setVisible(true);
 
 		Timer timer = panel.new DataGenerator(1000);
 		timer.start();
+		
+		panel.openPricePanel();
 	}
 
 	public FXChart(boolean db, int currency_pair, int period, int max) {
@@ -289,6 +288,7 @@ public class FXChart extends JPanel {
 		plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
 
 		JFreeChart jfreechart = new JFreeChart(null, null, plot, false);
+		
 		progress.hideProgress();
 
 		return jfreechart;
@@ -330,6 +330,9 @@ public class FXChart extends JPanel {
 					domain.setMinimumDate(FXChartUtils.addTimePeriod(prd, -max_visible).getStart());
 					// 最大は最新の30本後
 					domain.setMaximumDate(FXChartUtils.addTimePeriod(prd, 30).getEnd());
+					
+					// プライスパネルの更新
+					price.updatePricePanel(cs);
 
 					pre_period = prd;
 				}
@@ -370,6 +373,16 @@ public class FXChart extends JPanel {
 
 			changed = false;
 		}
+	}
+	
+	private void openPricePanel(){
+		// プライスパネルの表示
+		price = new Price(cs);
+		JFrame price_frame = new JFrame("");
+		price_frame.getContentPane().add(price, BorderLayout.CENTER);
+		price_frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		price_frame.setBounds(801, 0, 240, 120);
+		price_frame.setVisible(true);
 	}
 
 	class DataGenerator extends Timer implements ActionListener {
