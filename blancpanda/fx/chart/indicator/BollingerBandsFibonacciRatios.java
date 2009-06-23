@@ -21,7 +21,7 @@ public class BollingerBandsFibonacciRatios {
 	/**
 	 * 移動平均のピリオド数
 	 */
-	private static int MA_PERIODS = 10;
+	private static int MA_PERIODS = 20;
 	private static double FIBO1 = 1.618;
 	private static double FIBO2 = 2.618;
 	private static double FIBO3 = 4.236;
