@@ -32,6 +32,12 @@ import blancpanda.fx.timeperiod.Minute5;
  */
 public class FXUtils {
 	
+	public static String[] STR_CURRENCY_PAIR = { "USD/CAD", "EUR/JPY", "NZD/JPY",
+		"GBP/CHF", "USD/CHF", "ZAR/JPY", "NZD/USD", "CAD/JPY",
+		"EUR/GBP", "USD/JPY", // 米ドル円
+		"CHF/JPY", "GBP/JPY", // 英ポンド円
+		"GBP/USD", "AUD/JPY", "EUR/USD", "AUD/USD" };
+	
 	/**
 	 * 取引時間チェック
 	 * @param date 日本時間のDate
