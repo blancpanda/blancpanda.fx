@@ -22,6 +22,7 @@ import blancpanda.fx.CandleStickDao;
 import blancpanda.fx.FXUtils;
 
 public class FXLogger {
+	private static int LOG_MAX_LENGTH = 60000;
 
 	/**
 	 * 各通貨ペア、ピリオドのリアルタイム処理用CandleStick
@@ -94,6 +95,16 @@ public class FXLogger {
 		try {
 			doc.insertString(doc.getLength(), new Date() + " : " + str + "\n",
 					null);
+			if(doc.getLength() > LOG_MAX_LENGTH){
+				int rmlen = doc.getLength() - LOG_MAX_LENGTH;
+				String sub_str = doc.getText(rmlen, 256);	// 256文字以内には改行があるのでは。
+				int index;
+				if((index = sub_str.indexOf("\n")) > 0){
+					rmlen += index + 1;
+				}
+				doc.remove(0, rmlen);
+				sub_str = null;
+			}
 			console.setCaretPosition(doc.getLength());
 		} catch (BadLocationException e) {
 		}
